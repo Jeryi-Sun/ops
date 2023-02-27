@@ -12,7 +12,7 @@ tokenizer = BertTokenizer.from_pretrained(bert_path)
 model = BertModel.from_pretrained(bert_path)
 
 # 设定设备，GPU加速更快，如果没有GPU则使用CPU
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 # 加载数据
