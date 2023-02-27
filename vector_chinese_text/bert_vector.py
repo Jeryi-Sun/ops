@@ -5,8 +5,8 @@ import pickle
 from tqdm import tqdm
 import setproctitle
 setproctitle.setproctitle("dataprocess.jeryi.sunzx")
-root_path = "/Users/sunzhongxiang/Desktop/科研/搜推联合/数据处理/kuaishou/raw_data/"
-bert_path = "/Users/sunzhongxiang/Desktop/bert-chinese"
+root_path = "../../raw_data/"
+bert_path = "../../bert-chinese"
 # 加载预训练的BERT模型和tokenizer
 tokenizer = BertTokenizer.from_pretrained(bert_path)
 model = BertModel.from_pretrained(bert_path)
