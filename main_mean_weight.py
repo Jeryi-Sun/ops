@@ -77,7 +77,7 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
             loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label)
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
+            optimizer.zero_grad()  
 
         model.eval()
         y_true, y_pred = [], []
