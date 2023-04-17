@@ -118,14 +118,14 @@ if __name__ == '__main__':
 
     
     model_args_reco: ModelArgs = ModelArgs(
-        max_seq_len=const.max_seq_len_reco, max_batch_size=args.batch_size, vocab_size=const.item_id_num, dim=const.item_id_dim, device=device
+        max_seq_len=const.max_seq_len_reco, max_batch_size=args.batch_size, vocab_size=const.item_id_num, dim=const.item_id_dim+6, device=device
     )
     model_args_open_search: ModelArgs = ModelArgs(
-        max_seq_len=const.max_seq_len_open_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num, dim=const.query_id_dim, device=device
+        max_seq_len=const.max_seq_len_open_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num, dim=const.query_id_dim+6, device=device
     )
 
     model_args_search: ModelArgs = ModelArgs(
-        max_seq_len=const.max_seq_len_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num,dim=const.query_id_dim, device=device
+        max_seq_len=const.max_seq_len_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num,dim=const.query_id_dim+6, device=device
     )
 
 
