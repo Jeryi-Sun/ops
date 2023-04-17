@@ -47,7 +47,7 @@ class basic_model_repeat(nn.Module):
        output_search = self.search_tf(search_history, transformer_time_feature=search_time)
        output_open_search = self.open_search_tf(open_search_history, transformer_time_feature=open_search_time)
        user_feature = self.user_embedding(user_id)
-       output_repeat = self.repeat_model(torch.cat([output_reco, output_search, output_open_search], dim=-1), self.search_embedding(search_history))[0]
+       output_repeat = self.repeat_model(torch.cat([output_reco, output_search, output_open_search], dim=-1), torch.cat([self.search_embedding(search_history), search_time], dim=-1))[0]
        history_feature = self.linear1(torch.cat([output_reco, output_search, output_open_search], dim=-1))
        return self.output_linear(torch.cat([history_feature, user_feature,output_repeat,time_features], dim=-1))
        
