@@ -116,7 +116,7 @@ if __name__ == '__main__':
     """
     增加数据类
     """
-    device = 'cuda'+args.gpu_id if torch.cuda.is_available() else 'cpu'
+    device = 'cuda:'+args.gpu_id if torch.cuda.is_available() else 'cpu'
 
     
     model_args_reco: ModelArgs = ModelArgs(
