@@ -14,6 +14,7 @@ import setproctitle
 from models.basic_model_repeat import basic_model_repeat
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import fbeta_score
 
 def setup_seed(seed):
     torch.manual_seed(seed)
