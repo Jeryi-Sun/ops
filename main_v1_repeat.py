@@ -34,7 +34,7 @@ parser.add_argument('--workspace', type=str, default='./workspace')
 parser.add_argument('--dataset_name', type=str, default='kuaishou')
 parser.add_argument('--use_cpu', dest='use_gpu', action='store_false')
 parser.set_defaults(use_gpu=True)
-parser.add_argument('--gpu_id', type=int, default=0)
+parser.add_argument('--gpu_id', type=str, default='0')
 parser.add_argument('--lr', type=float, default=0.001)
 parser.add_argument('--weight_decay', type=float, default=0.001)
 parser.add_argument('--epochs', type=int, default=20)
@@ -68,13 +68,15 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
     """
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=args.weight_decay)
     best_acc = 0.0
-    loss_func = nn.CrossEntropyLoss()
+    f0_5 = 0
     for epoch in tqdm(range(epochs)):
         model.train()
-        for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label in tqdm(train_loader):
-            rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label = \
-                rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long()
-            loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label)
+        for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s in tqdm(train_loader):
+            rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s = \
+                rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long(), \
+                    rec_inter_time_s.to(device), search_inter_time_s.to(device), open_search_inter_time_s.to(device)
+
+            loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -82,22 +84,29 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
         model.eval()
         y_true, y_pred = [], []
         with torch.no_grad():
-            for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label in val_loader: 
-                rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label = \
-                    rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long()
-                output = model.infer_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id)
+            for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s in tqdm(val_loader): 
+                rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s = \
+                    rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long(),\
+                        rec_inter_time_s.to(device), search_inter_time_s.to(device), open_search_inter_time_s.to(device)
+
+                output = model.infer_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
                 y_true += label.cpu().numpy().tolist()
                 y_pred += output.argmax(dim=-1).cpu().numpy().tolist()
             acc = accuracy_score(y_true, y_pred)
             precision = precision_score(y_true, y_pred)
             recall = recall_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred)
-            print(f'Epoch {epoch+1}/{epochs}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}')
+            f_0_5 = fbeta_score(y_true, y_pred, beta=0.5) 
+            print(f'Epoch {epoch+1}/{epochs}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}, F0.5-score {f_0_5:.4f}')
 
+            if f_0_5>f0_5:
+                f0_5=f_0_5
+                score_list = [acc, precision, recall, f1, f_0_5]
         # 保存最优模型参数
         if acc > best_acc and save_path is not None:
             best_acc = acc
             torch.save(model.state_dict(), save_path)
+    print(f'val accuracy {score_list[0]:.4f}, precision {score_list[1]:.4f}, recall {score_list[2]:.4f}, F1-score {score_list[3]:.4f}, F0.5-score {score_list[4]:.4f}')
 
     return model
 
@@ -112,24 +121,24 @@ if __name__ == '__main__':
     """
     增加数据类
     """
-    device = 'cuda'+args.gpu_id if torch.cuda.is_available() else 'cpu'
+    device = 'cuda:'+args.gpu_id if torch.cuda.is_available() else 'cpu'
 
     
     model_args_reco: ModelArgs = ModelArgs(
-        max_seq_len=const.max_seq_len_reco, max_batch_size=args.batch_size, vocab_size=const.item_id_num, dim=const.item_id_dim, device=device
+        max_seq_len=const.max_seq_len_reco, max_batch_size=args.batch_size, vocab_size=const.item_id_num, dim=const.item_id_dim+const.time_feature_dim, embedding_dim=const.item_id_dim, device=device
     )
     model_args_open_search: ModelArgs = ModelArgs(
-        max_seq_len=const.max_seq_len_open_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num, dim=const.query_id_dim, device=device
+        max_seq_len=const.max_seq_len_open_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num, dim=const.query_id_dim+const.time_feature_dim, embedding_dim=const.item_id_dim, device=device
     )
 
     model_args_search: ModelArgs = ModelArgs(
-        max_seq_len=const.max_seq_len_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num,dim=const.query_id_dim, device=device
+        max_seq_len=const.max_seq_len_search, max_batch_size=args.batch_size, vocab_size=const.query_id_num,dim=const.query_id_dim+const.time_feature_dim, embedding_dim=const.item_id_dim, device=device
     )
 
 
     # 定义模型
     model = basic_model_repeat(model_args_reco, model_args_search, model_args_open_search)
-
+    model.to(device)
     # 训练模型
 
     train(model, train_loader, val_loader, lr=args.lr, epochs=args.epochs, device=device)

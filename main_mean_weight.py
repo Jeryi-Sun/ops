@@ -68,6 +68,7 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
     """
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=args.weight_decay)
     best_acc = 0.0
+    f0_5=0
     for epoch in tqdm(range(epochs)):
         model.train()
         for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s in tqdm(train_loader):
@@ -98,10 +99,15 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
             f_0_5 = fbeta_score(y_true, y_pred, beta=0.5) 
             print(f'Epoch {epoch+1}/{epochs}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}, F0.5-score {f_0_5:.4f}')
 
+            if f_0_5>f0_5:
+                f0_5=f_0_5
+                score_list = [acc, precision, recall, f1, f_0_5]
         # 保存最优模型参数
         if acc > best_acc and save_path is not None:
             best_acc = acc
             torch.save(model.state_dict(), save_path)
+    print(f'val accuracy {score_list[0]:.4f}, precision {score_list[1]:.4f}, recall {score_list[2]:.4f}, F1-score {score_list[3]:.4f}, F0.5-score {score_list[4]:.4f}')
+
 
 
 if __name__ == '__main__':

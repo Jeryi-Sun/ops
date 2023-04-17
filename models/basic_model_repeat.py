@@ -42,19 +42,19 @@ class basic_model_repeat(nn.Module):
         #self.loss_func = FocalLoss()
         self.repeat_model = TargetAttention(3*params_reco.dim, 2*params_reco.dim, params_reco.dim)
 
-    def forward(self, reco_history, search_history, open_search_history, time_features, user_id):
-       output_reco = self.reco_tf(reco_history)
-       output_search = self.search_tf(search_history)
-       output_open_search = self.open_search_tf(open_search_history)
+    def forward(self, reco_history, search_history, open_search_history, time_features, user_id, reco_time, search_time, open_search_time):
+       output_reco = self.reco_tf(reco_history,transformer_time_feature=reco_time)
+       output_search = self.search_tf(search_history, transformer_time_feature=search_time)
+       output_open_search = self.open_search_tf(open_search_history, transformer_time_feature=open_search_time)
        user_feature = self.user_embedding(user_id)
        output_repeat = self.repeat_model(torch.cat([output_reco, output_search, output_open_search], dim=-1), self.search_embedding(search_history))[0]
        history_feature = self.linear1(torch.cat([output_reco, output_search, output_open_search], dim=-1))
        return self.output_linear(torch.cat([history_feature, user_feature,output_repeat,time_features], dim=-1))
        
-    def train_(self, reco_history, search_history, open_search_history, time_features, user_id, label):
-        output = self.forward(reco_history, search_history, open_search_history,time_features, user_id)
+    def train_(self, reco_history, search_history, open_search_history, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s):
+        output = self.forward(reco_history, search_history, open_search_history,time_features, user_id, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
         return self.loss_func(output, label)
     @torch.inference_mode()
-    def infer_(self, reco_history, search_history, open_search_history, time_features, user_id ):
-        output = self.forward(reco_history, search_history, open_search_history,time_features, user_id)
+    def infer_(self, reco_history, search_history, open_search_history, time_features, user_id,rec_inter_time_s, search_inter_time_s, open_search_inter_time_s ):
+        output = self.forward(reco_history, search_history, open_search_history,time_features, user_id, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
         return output
