@@ -75,7 +75,7 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
                 rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long(), \
                     rec_inter_time_s.to(device), search_inter_time_s.to(device), open_search_inter_time_s.to(device)
 
-            loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
+            loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label)
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -88,7 +88,7 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
                     rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long(),\
                         rec_inter_time_s.to(device), search_inter_time_s.to(device), open_search_inter_time_s.to(device)
 
-                output = model.infer_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
+                output = model.infer_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id)
                 y_true += label.cpu().numpy().tolist()
                 y_pred += output.argmax(dim=-1).cpu().numpy().tolist()
             acc = accuracy_score(y_true, y_pred)
