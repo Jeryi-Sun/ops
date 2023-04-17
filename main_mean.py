@@ -69,40 +69,40 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
     """
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=args.weight_decay)
     best_acc = 0.0
-    loss_func = nn.CrossEntropyLoss()
     for epoch in tqdm(range(epochs)):
         model.train()
-        for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label in tqdm(train_loader):
-            rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label = \
-                rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long()
-            loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label)
+        for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s in tqdm(train_loader):
+            rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s = \
+                rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long(), \
+                    rec_inter_time_s.to(device), search_inter_time_s.to(device), open_search_inter_time_s.to(device)
+
+            loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()  
+            optimizer.zero_grad()
 
         model.eval()
         y_true, y_pred = [], []
         with torch.no_grad():
-            for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label in val_loader: 
-                rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label = \
-                    rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long()
-                output = model.infer_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id)
+            for rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s in tqdm(val_loader): 
+                rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s = \
+                    rec_inter_history_s.to(device), search_inter_history_s.to(device), open_search_inter_history_s.to(device), time_features.to(device), user_id.to(device), label.to(device).long(),\
+                        rec_inter_time_s.to(device), search_inter_time_s.to(device), open_search_inter_time_s.to(device)
+
+                output = model.infer_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, rec_inter_time_s, search_inter_time_s, open_search_inter_time_s)
                 y_true += label.cpu().numpy().tolist()
                 y_pred += output.argmax(dim=-1).cpu().numpy().tolist()
             acc = accuracy_score(y_true, y_pred)
             precision = precision_score(y_true, y_pred)
             recall = recall_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred)
-            f_0_5 = fbeta_score(y_true, y_pred, beta=0.5)
-            print(f'Epoch {epoch+1}/{epochs}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}, F_0_5-score {f_0_5:.4f}')
+            f_0_5 = fbeta_score(y_true, y_pred, beta=0.5) 
+            print(f'Epoch {epoch+1}/{epochs}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}, F0.5-score {f_0_5:.4f}')
 
         # 保存最优模型参数
         if acc > best_acc and save_path is not None:
             best_acc = acc
             torch.save(model.state_dict(), save_path)
-
-    return model
-
 if __name__ == '__main__':
     # 加载数据
     train_dataset = MyDataset(const.train_file,  max_len_reco=const.max_seq_len_reco, max_len_search=const.max_seq_len_search, max_len_open_search=const.max_seq_len_open_search)
