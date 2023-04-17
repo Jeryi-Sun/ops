@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import fbeta_score
 from config import const
 import numpy as np
 import random
@@ -115,15 +116,16 @@ if __name__ == '__main__':
     # 训练模型
     for idx in tqdm(range(len(valid_data))):
         user_id, time, label = valid_data.loc[idx, ['user_id', 'request_time_ms', 'label']]
-        open_action_list = [1-a for a in open_actions[(user_id, time)]]
-        y_true.append(1-label)
+        open_action_list = [a for a in open_actions[(user_id, time)]]
+        y_true.append(label)
         y_pred.append(model.predict(open_action_list))
     acc = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred)
     recall = recall_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred)
+    f_0_5 = fbeta_score(y_true, y_pred, beta=0.5)
 
-    print(f'val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}')
+    print(f'val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}, F_0_5-score {f_0_5:.4f}')
 
 
     

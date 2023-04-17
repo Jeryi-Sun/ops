@@ -14,6 +14,7 @@ import setproctitle
 from models.model_rule import rule_model
 from tqdm import tqdm
 import pickle
+from sklearn.metrics import fbeta_score
 import pandas as pd
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     # 定义模型
     score_final = []
     model = rule_model()
-    f1_ = 0
+    f5_ = 0
     for threshold1 in np.arange(0.1, 1.0, 0.1):
         for threshold2 in np.arange(0.1, 1.0, 0.1):
         # 训练模型
@@ -127,11 +128,12 @@ if __name__ == '__main__':
             precision = precision_score(y_true, y_pred)
             recall = recall_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred)
-            if f1>f1_:
-                f1_ = f1
-                score_final = [acc, precision, recall, f1 ]
-            print(f' threshold1: {threshold1}/ threshold2: {threshold2}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}')
-    print(f'val accuracy {score_final[0]:.4f}, precision {score_final[1]:.4f}, recall {score_final[2]:.4f}, F1-score {score_final[3]:.4f}')
+            f_0_5 = fbeta_score(y_true, y_pred, beta=0.5)
+            if f_0_5>f5_:
+                f5_ = f_0_5
+                score_final = [acc, precision, recall, f1, f_0_5]
+            print(f' threshold1: {threshold1}/ threshold2: {threshold2}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}, F_0_5-score {f_0_5:.4f} ')
+    print(f'val accuracy {score_final[0]:.4f}, precision {score_final[1]:.4f}, recall {score_final[2]:.4f}, F1-score {score_final[3]:.4f},  F_0_5-score {score_final[4]:.4f} ')
 
 
     

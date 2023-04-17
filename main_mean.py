@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import fbeta_score
 from dataset.dataset import MyDataset, my_collate_fn
 from config import const
 from models.transformer import Transformer, ModelArgs
@@ -77,7 +78,7 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
             loss = model.train_(rec_inter_history_s, search_inter_history_s, open_search_inter_history_s, time_features, user_id, label)
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
+            optimizer.zero_grad()  
 
         model.eval()
         y_true, y_pred = [], []
@@ -92,7 +93,8 @@ def train(model, train_loader, val_loader, lr=0.001, epochs=10, device='cpu', sa
             precision = precision_score(y_true, y_pred)
             recall = recall_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred)
-            print(f'Epoch {epoch+1}/{epochs}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}')
+            f_0_5 = fbeta_score(y_true, y_pred, beta=0.5)
+            print(f'Epoch {epoch+1}/{epochs}: val accuracy {acc:.4f}, precision {precision:.4f}, recall {recall:.4f}, F1-score {f1:.4f}, F_0_5-score {f_0_5:.4f}')
 
         # 保存最优模型参数
         if acc > best_acc and save_path is not None:
