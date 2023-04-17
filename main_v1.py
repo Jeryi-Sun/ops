@@ -34,7 +34,7 @@ parser.add_argument('--workspace', type=str, default='./workspace')
 parser.add_argument('--dataset_name', type=str, default='kuaishou')
 parser.add_argument('--use_cpu', dest='use_gpu', action='store_false')
 parser.set_defaults(use_gpu=True)
-parser.add_argument('--gpu_id', type=int, default=0)
+parser.add_argument('--gpu_id', type=str, default='0')
 parser.add_argument('--lr', type=float, default=0.0001)
 parser.add_argument('--weight_decay', type=float, default=0.0001)
 parser.add_argument('--epochs', type=int, default=20)
@@ -135,5 +135,6 @@ if __name__ == '__main__':
     model = basic_model(model_args_reco, model_args_search, model_args_open_search)
 
     # 训练模型
+    model.to(device)
 
     train(model, train_loader, val_loader, lr=args.lr, epochs=args.epochs, device=device)
